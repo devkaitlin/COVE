@@ -1,0 +1,93 @@
+#Tank Health 
+
+import bpy
+
+class chemHist(bpy.types.Operator):
+    bl_label = "Chem History"
+    bl_idname = "wm.chemhist"
+
+    # Define properties to store user input
+    chem: bpy.props.StringProperty(name="Chemical", default="")
+    dose: bpy.props.StringProperty(name="Dose", default="")
+    date: bpy.props.StringProperty(name="Date", default="")  
+    notes: bpy.props.StringProperty(name="Notes", default="")
+    
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+    def execute(self, context):
+        self.save_csv()
+        
+        return {'FINISHED'}
+
+    def save_csv(self):
+        import csv
+        import os
+
+        # Define the file path (e.g., in the same directory as the .blend file)
+        blend_file_dir = os.path.dirname(bpy.data.filepath)
+        if not blend_file_dir:
+            self.report({'ERROR'}, "Save your Blender file first to define a path.")
+            return
+
+        self.file_name = 'tankhealth'
+        file_path = os.path.join(blend_file_dir, f"{self.file_name}.csv")
+
+        # Data to be written
+        data_row = [self.chem, self.dose, self.date, self.notes]
+        header = ["Chemical", "Dose", "Date", "Notes"]
+
+        # Open the file in append mode ('a')
+        file_exists = os.path.isfile(file_path)
+        with open(file_path, mode='a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+
+            # Write header only if the file is new
+            if not file_exists:
+                writer.writerow(header)
+
+            # Write the data row
+            writer.writerow(data_row)
+
+        print(f"Data saved to {file_path}")
+        self.report({'INFO'}, f"Data saved to {file_path}")
+    
+    
+
+class emergHist(bpy.types.Operator):
+    bl_label = "Emergency"
+    bl_idname = "wm.emergencies"
+
+    # Define properties to store user input
+    type: bpy.props.StringProperty(name="Emergency type #", default="")
+        
+    def invoke(self, context, event):
+        # This displays the pop-up dialog
+        return context.window_manager.invoke_props_dialog(self)
+
+class custy(bpy.types.Panel):
+    bl_label = "Tank Health Records"
+    bl_idname = "custom"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Tank Health' # Name of the tab in the N-panel
+
+    def draw(self, context):
+        layout = self.layout
+        # Add a button that calls the operator defined above
+        layout.operator("wm.chemhist", text="Chem History") 
+        layout.operator("wm.emergencies",text="Emergencies")  
+
+
+# Register and Unregister functions
+def register():
+    bpy.utils.register_class(chemHist)
+    bpy.utils.register_class(emergHist)
+    bpy.utils.register_class(custy)
+
+def unregister():
+    bpy.utils.unregister_class(chemHist)
+    bpy.utils.unregister_class(emergHist)
+    bpy.utils.unregister_class(custy)
+
+if __name__ == "__main__":
+    register()
